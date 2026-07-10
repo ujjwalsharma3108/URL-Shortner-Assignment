@@ -3,6 +3,7 @@
 use App\Http\Controllers\AcceptAdminInvitationController;
 use App\Http\Controllers\AdminInvitationController;
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\CompanyController;
 use App\Http\Controllers\DashboardController;
 use Illuminate\Support\Facades\Route;
 
@@ -21,10 +22,8 @@ Route::view('/', 'welcome');
 
 Route::middleware('guest:api')->group(function () {
     Route::view('/login', 'auth.login')->name('login');
-    Route::view('/register', 'auth.register')->name('register');
 
     Route::post('/login', [AuthController::class, 'login'])->name('login.store');
-    Route::post('/register', [AuthController::class, 'register'])->name('register.store');
 
     Route::get('/admin-invitations/accept/{token}', [AcceptAdminInvitationController::class, 'show'])
         ->where('token', '[A-Za-z0-9]{64}')
@@ -39,10 +38,15 @@ Route::middleware('auth:api')->group(function () {
     Route::get('/me', [AuthController::class, 'me'])->name('me');
     Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 
-    Route::middleware('can:manage-admins')->group(function () {
+    Route::middleware('can:manage-users')->group(function () {
         Route::post('/admin-invitations', [AdminInvitationController::class, 'store'])
             ->name('admin-invitations.store');
         Route::post('/admin-invitations/{invitation}/resend', [AdminInvitationController::class, 'resend'])
             ->name('admin-invitations.resend');
+    });
+
+    Route::middleware('can:manage-admins')->group(function () {
+        Route::post('/companies', [CompanyController::class, 'store'])
+            ->name('companies.store');
     });
 });

@@ -1,10 +1,10 @@
 @extends('layouts.auth')
 
-@section('title', 'Accept admin invitation')
+@section('title', 'Accept invitation')
 
 @section('content')
-    <h1>Set up your admin account</h1>
-    <p class="subtitle">You have been invited to join as an administrator. Choose a password to activate your account.</p>
+    <h1>Set up your account</h1>
+    <p class="subtitle">You have been invited to join {{ $invitation->user->company->name }} as a {{ ucfirst($invitation->user->role->value) }}. Choose a password to activate your account.</p>
 
     @if ($errors->any())
         <div class="message error" role="alert">
@@ -35,7 +35,7 @@
             <input id="password_confirmation" name="password_confirmation" type="password" placeholder="Repeat your password" autocomplete="new-password" minlength="8" required>
         </div>
 
-        <button class="button" type="submit">Activate admin account</button>
+        <button class="button" type="submit">Activate account</button>
     </form>
 
     <p class="footnote">This invitation expires {{ $invitation->expires_at->diffForHumans() }}.</p>

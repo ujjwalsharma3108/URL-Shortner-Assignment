@@ -34,7 +34,7 @@ class SendAdminInvitation implements ShouldQueue
 
     public function handle(): void
     {
-        $this->invitation->refresh()->loadMissing(['user', 'inviter']);
+        $this->invitation->refresh()->loadMissing(['user.company', 'inviter']);
         $token = $this->token();
 
         if (! $this->invitation->isPending()

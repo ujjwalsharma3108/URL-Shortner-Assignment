@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers;
 
-use App\Enums\UserRole;
+use App\Models\Company;
 use App\Models\User;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\Request;
@@ -15,9 +15,18 @@ class DashboardController extends Controller
 
         return view('dashboard', [
             'user' => $user,
-            'admins' => $user->isSuperAdmin()
+            'companies' => $user->isSuperAdmin()
+                ? Company::query()
+                    ->withDirectoryCounts()
+                    ->with(['admins' => fn ($query) => $query
+                        ->with('adminInvitation')
+                        ->oldest()])
+                    ->latest()
+                    ->get()
+                : collect(),
+            'managedUsers' => $user->isAdmin()
                 ? User::query()
-                    ->where('role', UserRole::Admin)
+                    ->where('created_by', $user->id)
                     ->with('adminInvitation')
                     ->latest()
                     ->get()

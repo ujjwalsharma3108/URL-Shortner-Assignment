@@ -23,7 +23,4 @@
         <button class="button" type="submit">Sign in</button>
     </form>
 
-    <p class="switch">
-        New here? <a href="{{ route('register') }}">Create an account</a>
-    </p>
 @endsection

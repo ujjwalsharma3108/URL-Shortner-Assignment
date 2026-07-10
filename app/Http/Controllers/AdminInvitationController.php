@@ -3,67 +3,79 @@
 namespace App\Http\Controllers;
 
 use App\Enums\UserRole;
-use App\Jobs\SendAdminInvitation;
 use App\Models\AdminInvitation;
-use App\Models\User;
+use App\Models\Company;
+use App\Services\UserInvitationService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Str;
+use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 
 class AdminInvitationController extends Controller
 {
-    public function store(Request $request): RedirectResponse
+    public function store(Request $request, UserInvitationService $invitations): RedirectResponse
     {
         $data = $request->validate([
             'name' => ['required', 'string', 'max:100'],
             'email' => ['required', 'string', 'email:rfc', 'max:255', 'not_regex:/[\r\n]/', 'unique:users,email'],
+            'role' => ['required', Rule::in([UserRole::Admin->value, UserRole::Member->value])],
+            'company_id' => ['nullable', 'integer', 'exists:companies,id'],
         ]);
 
-        $token = Str::random(64);
+        $inviter = $request->user('api');
+        $role = UserRole::from($data['role']);
 
-        $invitation = DB::transaction(function () use ($data, $request, $token) {
-            $user = User::create([
-                'name' => $data['name'],
-                'email' => $data['email'],
-                'password' => Str::random(64),
-                'role' => UserRole::Admin,
-            ]);
+        if ($inviter->isSuperAdmin()) {
+            if ($role !== UserRole::Admin || empty($data['company_id'])) {
+                throw ValidationException::withMessages([
+                    'company_id' => 'Super admins must select a company and can invite administrators only.',
+                ]);
+            }
 
-            return AdminInvitation::create([
-                'user_id' => $user->id,
-                'invited_by' => $request->user('api')->id,
-                'token_hash' => hash('sha256', $token),
-                'expires_at' => now()->addHours(config('auth.admin_invitation_expire_hours')),
-            ]);
-        });
+            $company = Company::findOrFail($data['company_id']);
+            $anchor = 'company-management';
+        } else {
+            if (! $inviter->company) {
+                throw ValidationException::withMessages([
+                    'company_id' => 'Your administrator account is not assigned to a company.',
+                ]);
+            }
 
-        SendAdminInvitation::dispatch($invitation, $token);
+            $company = $inviter->company;
+            $anchor = 'team-management';
+        }
 
-        return redirect(route('dashboard').'#admin-management')
-            ->with('status', "Invitation for {$data['email']} has been queued.");
+        $invitations->create($inviter, $company, $role, $data);
+
+        $roleLabel = ucfirst($role->value);
+
+        return redirect(route('dashboard').'#'.$anchor)
+            ->with('status', "{$roleLabel} invitation for {$data['email']} has been queued.");
     }
 
-    public function resend(AdminInvitation $invitation): RedirectResponse
-    {
-        abort_unless($invitation->user->isAdmin(), 404);
+    public function resend(
+        Request $request,
+        AdminInvitation $invitation,
+        UserInvitationService $invitations,
+    ): RedirectResponse {
+        $inviter = $request->user('api');
+        $invitation->loadMissing('user');
+
+        abort_if(
+            $inviter->isAdmin() && $invitation->user->created_by !== $inviter->id,
+            403,
+        );
 
         if ($invitation->isAccepted()) {
             return back()->withErrors([
-                'invitation' => 'This administrator has already accepted the invitation.',
+                'invitation' => 'This user has already accepted the invitation.',
             ]);
         }
 
-        $token = Str::random(64);
+        $invitations->resend($invitation);
+        $anchor = $inviter->isSuperAdmin() ? 'company-management' : 'team-management';
 
-        $invitation->update([
-            'token_hash' => hash('sha256', $token),
-            'expires_at' => now()->addHours(config('auth.admin_invitation_expire_hours')),
-        ]);
-
-        SendAdminInvitation::dispatch($invitation, $token);
-
-        return redirect(route('dashboard').'#admin-management')
+        return redirect(route('dashboard').'#'.$anchor)
             ->with('status', "A new invitation for {$invitation->user->email} has been queued.");
     }
 }

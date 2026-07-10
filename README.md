@@ -1,95 +1,241 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# URL Shortener Assignment
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+Laravel 10 application with JWT authentication, company-based user management, role-based access, and queued Gmail invitation emails.
 
-## About Laravel
+## Requirements
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+- PHP 8.1 or newer with `pdo_mysql`
+- Composer
+- MySQL or MariaDB
+- Node.js and npm (only required when building frontend assets)
+- A Gmail account with 2-Step Verification and an App Password
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+XAMPP can provide PHP, Apache, and MySQL for local development.
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+## Project setup
 
-## Learning Laravel
+### 1. Download the project
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+Clone the repository and enter the project directory:
 
-You may also try the [Laravel Bootcamp](https://bootcamp.laravel.com), where you will be guided through building a modern Laravel application from scratch.
+```bash
+git clone <repository-url>
+cd URL-Shortner-Assignment
+```
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+If the project was downloaded as a ZIP, extract it and open the extracted directory in a terminal.
 
-## Laravel Sponsors
+### 2. Install dependencies
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
+```bash
+composer install
+```
 
-### Premium Partners
+Install frontend dependencies if frontend assets need to be rebuilt:
 
-- **[Vehikl](https://vehikl.com/)**
-- **[Tighten Co.](https://tighten.co)**
-- **[WebReinvent](https://webreinvent.com/)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel/)**
-- **[Cyber-Duck](https://cyber-duck.co.uk)**
-- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
-- **[Jump24](https://jump24.co.uk)**
-- **[Redberry](https://redberry.international/laravel/)**
-- **[Active Logic](https://activelogic.com)**
-- **[byte5](https://byte5.de)**
-- **[OP.GG](https://op.gg)**
+```bash
+npm install
+npm run build
+```
 
-## Contributing
+### 3. Create the environment file
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+```bash
+cp .env.example .env
+```
 
-## Code of Conduct
+Generate the Laravel application key and JWT secret:
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+```bash
+php artisan key:generate
+php artisan jwt:secret
+```
 
-## Security Vulnerabilities
+### 4. Create the MySQL databases
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+Create the application and test databases using phpMyAdmin or MySQL:
 
-## License
+```sql
+CREATE DATABASE url_shortener_assignment
+    CHARACTER SET utf8mb4
+    COLLATE utf8mb4_unicode_ci;
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+CREATE DATABASE url_shortener_assignment_test
+    CHARACTER SET utf8mb4
+    COLLATE utf8mb4_unicode_ci;
+```
 
-## Admin invitation email setup
+Configure the application database in `.env`:
 
-Administrator invitations use Gmail SMTP and Laravel's database queue.
+```dotenv
+DB_CONNECTION=mysql
+DB_HOST=127.0.0.1
+DB_PORT=3306
+DB_DATABASE=url_shortener_assignment
+DB_USERNAME=root
+DB_PASSWORD=
+```
 
-1. Enable 2-Step Verification for the sender Google account and create a 16-character App Password.
-2. Configure the application URL and Gmail SMTP values in `.env`:
+The example uses the default local XAMPP credentials. Use secure credentials outside local development.
 
-   ```dotenv
-   APP_URL=http://localhost:8000
-   MAIL_MAILER=smtp
-   MAIL_HOST=smtp.gmail.com
-   MAIL_PORT=587
-   MAIL_USERNAME=your-email@gmail.com
-   MAIL_PASSWORD=your-16-character-app-password
-   MAIL_ENCRYPTION=tls
-   MAIL_FROM_ADDRESS="${MAIL_USERNAME}"
-   MAIL_FROM_NAME="${APP_NAME}"
-   QUEUE_CONNECTION=database
-   ```
+### 5. Configure the application and Super Admin
 
-3. Run migrations and start the dedicated email queue worker:
+Set the local application URL and initial Super Admin credentials in `.env`:
 
-   ```bash
-   php artisan migrate
-   php artisan queue:work --queue=emails,default --tries=3
-   ```
+```dotenv
+APP_NAME="URL Shortener"
+APP_ENV=local
+APP_DEBUG=true
+APP_URL=http://localhost:8000
 
-The invitation link expires after 72 hours by default. Change `ADMIN_INVITATION_EXPIRE_HOURS` if a different lifetime is required.
+SUPER_ADMIN_NAME="Super Admin"
+SUPER_ADMIN_EMAIL=superadmin@example.com
+SUPER_ADMIN_PASSWORD="change-this-password"
+```
+
+`APP_URL` is used to generate invitation links, so it must match the address used to open the application.
+
+### 6. Configure Gmail SMTP
+
+Do not use the normal Gmail password.
+
+1. Enable 2-Step Verification on the sender Google account.
+2. Create a 16-character Google App Password.
+3. Add the Gmail address and App Password to `.env`:
+
+```dotenv
+MAIL_MAILER=smtp
+MAIL_HOST=smtp.gmail.com
+MAIL_PORT=587
+MAIL_USERNAME="your-email@gmail.com"
+MAIL_PASSWORD="your-16-character-app-password"
+MAIL_ENCRYPTION=tls
+MAIL_FROM_ADDRESS="${MAIL_USERNAME}"
+MAIL_FROM_NAME="${APP_NAME}"
+```
+
+### 7. Configure the invitation queue
+
+The application stores invitation jobs in MySQL:
+
+```dotenv
+QUEUE_CONNECTION=database
+ADMIN_INVITATION_EXPIRE_HOURS=72
+```
+
+### 8. Run migrations and seed the Super Admin
+
+```bash
+php artisan migrate --seed
+```
+
+This creates the users, companies, invitations, queue, and failed-job tables, then creates or updates the configured Super Admin.
+
+### 9. Start the application
+
+```bash
+php artisan serve --host=localhost --port=8000
+```
+
+Open:
+
+```text
+http://localhost:8000/login
+```
+
+Sign in using `SUPER_ADMIN_EMAIL` and `SUPER_ADMIN_PASSWORD` from `.env`.
+
+### 10. Start the queue worker
+
+Open a second terminal in the project directory and run:
+
+```bash
+php artisan queue:work database --queue=emails,default --tries=3 --timeout=90
+```
+
+Keep this terminal running while testing invitations. The invitation flow is:
+
+```text
+Create user → jobs table → queue worker → Gmail SMTP → invitation email
+```
+
+Restart long-running workers after code or `.env` changes:
+
+```bash
+php artisan config:clear
+php artisan queue:restart
+```
+
+Then start `queue:work` again if a process manager is not restarting it automatically.
+
+## Roles and access
+
+| Role | Access |
+| --- | --- |
+| `super_admin` | View every company and its admins; create companies with a primary admin; add admins to existing companies. |
+| `admin` | Belongs to one company; invite Admin or Member users; view only users created by that admin. |
+| `member` | Sign in to the application but cannot create or manage users. |
+
+Public registration is disabled. Company users receive a queued email invitation and set their password using the invitation link.
+
+Existing Admin or Member records without a company are assigned to `Default Company` when the company migration runs.
+
+## Queue management
+
+List failed jobs:
+
+```bash
+php artisan queue:failed
+```
+
+Retry every failed job:
+
+```bash
+php artisan queue:retry all
+```
+
+Process a single queued job and exit:
+
+```bash
+php artisan queue:work database --queue=emails --once
+```
+
+## Running tests
+
+Ensure `url_shortener_assignment_test` exists and the testing credentials in `phpunit.xml` match the local MySQL server. Then run:
+
+```bash
+php artisan test
+```
+
+## Common issues
+
+### Invitation email remains in the `jobs` table
+
+The queue worker is not running. Start it with:
+
+```bash
+php artisan queue:work database --queue=emails,default --tries=3
+```
+
+### Gmail authentication fails
+
+Confirm that 2-Step Verification is enabled and `MAIL_PASSWORD` contains a Google App Password, not the regular Gmail password. After changing it, run:
+
+```bash
+php artisan config:clear
+php artisan queue:restart
+```
+
+### Invitation link uses an old hostname or port
+
+Update `APP_URL`, clear the configuration, restart the worker, and resend the invitation:
+
+```bash
+php artisan config:clear
+php artisan queue:restart
+```
+
+### Database connection fails
+
+Make sure MySQL is running and verify `DB_HOST`, `DB_PORT`, `DB_DATABASE`, `DB_USERNAME`, and `DB_PASSWORD` in `.env`.

@@ -43,6 +43,6 @@ class AcceptAdminInvitationController extends Controller
         });
 
         return redirect()->route('login')
-            ->with('status', 'Your administrator account is ready. You can now sign in.');
+            ->with('status', 'Your account is ready. You can now sign in.');
     }
 }

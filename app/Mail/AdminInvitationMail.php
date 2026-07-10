@@ -20,8 +20,10 @@ class AdminInvitationMail extends Mailable
 
     public function envelope(): Envelope
     {
+        $role = ucfirst($this->invitation->user->role->value);
+
         return new Envelope(
-            subject: 'You have been invited as an administrator',
+            subject: "You have been invited as a {$role}",
         );
     }
 

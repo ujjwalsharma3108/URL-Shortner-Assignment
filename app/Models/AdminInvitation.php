@@ -59,7 +59,7 @@ class AdminInvitation extends Model
         }
 
         return static::query()
-            ->with(['user', 'inviter'])
+            ->with(['user.company', 'inviter'])
             ->where('token_hash', hash('sha256', $token))
             ->whereNull('accepted_at')
             ->where('expires_at', '>', now())

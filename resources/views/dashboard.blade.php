@@ -421,7 +421,8 @@
             font-weight: 650;
         }
 
-        .admin-management {
+        .company-management,
+        .team-management {
             margin-top: 18px;
             scroll-margin-top: 24px;
         }
@@ -481,6 +482,10 @@
             gap: 14px;
         }
 
+        .invite-form.three-fields {
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+        }
+
         .form-field label {
             display: block;
             margin-bottom: 7px;
@@ -489,7 +494,8 @@
             font-weight: 700;
         }
 
-        .form-field input {
+        .form-field input,
+        .form-field select {
             width: 100%;
             height: 42px;
             padding: 0 12px;
@@ -503,7 +509,16 @@
             transition: border-color 150ms ease, box-shadow 150ms ease;
         }
 
-        .form-field input:focus {
+        .form-field select {
+            appearance: none;
+            background-image: linear-gradient(45deg, transparent 50%, #667085 50%), linear-gradient(135deg, #667085 50%, transparent 50%);
+            background-position: calc(100% - 17px) 18px, calc(100% - 12px) 18px;
+            background-repeat: no-repeat;
+            background-size: 5px 5px, 5px 5px;
+        }
+
+        .form-field input:focus,
+        .form-field select:focus {
             border-color: #6366f1;
             box-shadow: 0 0 0 4px rgba(99, 102, 241, .1);
         }
@@ -633,6 +648,37 @@
             text-align: center;
         }
 
+        .company-admin-list {
+            display: grid;
+            min-width: 260px;
+            gap: 10px;
+        }
+
+        .company-admin {
+            display: flex;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #f0f1f3;
+            align-items: center;
+            justify-content: space-between;
+            gap: 14px;
+        }
+
+        .company-admin:last-child {
+            padding-bottom: 0;
+            border-bottom: 0;
+        }
+
+        .company-admin-actions {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .count-copy {
+            color: #667085;
+            font-size: 12px;
+        }
+
         @media (max-width: 980px) {
             .app-shell {
                 grid-template-columns: 84px minmax(0, 1fr);
@@ -674,6 +720,10 @@
             .invite-section {
                 grid-template-columns: 1fr;
                 gap: 18px;
+            }
+
+            .invite-form.three-fields {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
             }
         }
 
@@ -744,6 +794,10 @@
                 grid-template-columns: 1fr;
             }
 
+            .invite-form.three-fields {
+                grid-template-columns: 1fr;
+            }
+
             .admin-table th,
             .admin-table td {
                 padding-inline: 16px;
@@ -772,13 +826,21 @@
                 <span class="nav-text">Dashboard</span>
             </a>
             @if ($user->isSuperAdmin())
-                <a class="nav-item" href="#admin-management">
+                <a class="nav-item" href="#company-management">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+                        <path d="M4 21V7l8-4 8 4v14"/>
+                        <path d="M8 10h2m4 0h2m-8 4h2m4 0h2m-5 7v-3h2v3M2 21h20"/>
+                    </svg>
+                    <span class="nav-text">Companies</span>
+                </a>
+            @elseif ($user->isAdmin())
+                <a class="nav-item" href="#team-management">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
                         <path d="M16 20v-1.5a4.5 4.5 0 0 0-4.5-4.5h-5A4.5 4.5 0 0 0 2 18.5V20"/>
                         <circle cx="9" cy="7" r="4"/>
                         <path d="M19 8v6m3-3h-6"/>
                     </svg>
-                    <span class="nav-text">Admins</span>
+                    <span class="nav-text">My team</span>
                 </a>
             @endif
             {{-- <span class="nav-item muted" aria-disabled="true">
@@ -913,18 +975,24 @@
                             <p class="profile-label">Role</p>
                             <p class="profile-value">{{ ucwords(str_replace('_', ' ', $user->role->value)) }}</p>
                         </div>
+                        @if ($user->company)
+                            <div class="profile-row">
+                                <p class="profile-label">Company</p>
+                                <p class="profile-value">{{ $user->company->name }}</p>
+                            </div>
+                        @endif
                     </div>
                 </aside>
             </div>
 
             @if ($user->isSuperAdmin())
-                <section class="panel admin-management" id="admin-management">
+                <section class="panel company-management" id="company-management">
                     <header class="panel-header">
                         <div class="admin-heading-copy">
-                            <h2 class="panel-title">Administrator access</h2>
-                            <p>Create admin accounts and send secure email invitations.</p>
+                            <h2 class="panel-title">Company directory</h2>
+                            <p>Create companies, invite their admins, and review every company account.</p>
                         </div>
-                        <span class="panel-kicker">{{ $admins->count() }} {{ \Illuminate\Support\Str::plural('admin', $admins->count()) }}</span>
+                        <span class="panel-kicker">{{ $companies->count() }} {{ \Illuminate\Support\Str::plural('company', $companies->count()) }}</span>
                     </header>
 
                     @if (session('status'))
@@ -937,22 +1005,167 @@
 
                     <div class="invite-section">
                         <div class="invite-copy">
-                            <h3>Invite a new admin</h3>
-                            <p>The account is created in a pending state. An email with a secure password-setup link is added to the email queue.</p>
+                            <h3>Create company</h3>
+                            <p>Create a company and its first administrator together. The admin receives a secure password-setup email.</p>
                         </div>
 
-                        <form class="invite-form" action="{{ route('admin-invitations.store') }}" method="POST">
+                        <form class="invite-form three-fields" action="{{ route('companies.store') }}" method="POST">
                             @csrf
                             <div class="form-field">
-                                <label for="admin-name">Full name</label>
-                                <input id="admin-name" name="name" type="text" value="{{ old('name') }}" placeholder="Admin name" maxlength="100" required>
+                                <label for="company-name">Company name</label>
+                                <input id="company-name" name="company_name" type="text" value="{{ old('company_name') }}" placeholder="Company name" maxlength="150" required>
                             </div>
                             <div class="form-field">
-                                <label for="admin-email">Email address</label>
-                                <input id="admin-email" name="email" type="email" value="{{ old('email') }}" placeholder="admin@example.com" required>
+                                <label for="primary-admin-name">Primary admin</label>
+                                <input id="primary-admin-name" name="admin_name" type="text" value="{{ old('admin_name') }}" placeholder="Admin name" maxlength="100" required>
+                            </div>
+                            <div class="form-field">
+                                <label for="primary-admin-email">Admin email</label>
+                                <input id="primary-admin-email" name="admin_email" type="email" value="{{ old('admin_email') }}" placeholder="admin@example.com" required>
                             </div>
                             <div class="invite-submit">
-                                <button class="primary-button" type="submit">Create admin &amp; queue invite</button>
+                                <button class="primary-button" type="submit">Create company &amp; invite admin</button>
+                            </div>
+                        </form>
+                    </div>
+
+                    @if ($companies->isNotEmpty())
+                        <div class="invite-section">
+                            <div class="invite-copy">
+                                <h3>Add company admin</h3>
+                                <p>Invite another administrator to any existing company.</p>
+                            </div>
+
+                            <form class="invite-form three-fields" action="{{ route('admin-invitations.store') }}" method="POST">
+                                @csrf
+                                <input name="role" type="hidden" value="admin">
+                                <div class="form-field">
+                                    <label for="admin-company">Company</label>
+                                    <select id="admin-company" name="company_id" required>
+                                        <option value="">Select company</option>
+                                        @foreach ($companies as $company)
+                                            <option value="{{ $company->id }}" @selected((string) old('company_id') === (string) $company->id)>{{ $company->name }}</option>
+                                        @endforeach
+                                    </select>
+                                </div>
+                                <div class="form-field">
+                                    <label for="company-admin-name">Full name</label>
+                                    <input id="company-admin-name" name="name" type="text" value="{{ old('name') }}" placeholder="Admin name" maxlength="100" required>
+                                </div>
+                                <div class="form-field">
+                                    <label for="company-admin-email">Email address</label>
+                                    <input id="company-admin-email" name="email" type="email" value="{{ old('email') }}" placeholder="admin@example.com" required>
+                                </div>
+                                <div class="invite-submit">
+                                    <button class="primary-button" type="submit">Invite company admin</button>
+                                </div>
+                            </form>
+                        </div>
+                    @endif
+
+                    <div class="admin-table-wrap">
+                        <table class="admin-table">
+                            <thead>
+                            <tr>
+                                <th>Company</th>
+                                <th>Users</th>
+                                <th>Administrators</th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            @forelse ($companies as $company)
+                                <tr>
+                                    <td>
+                                        <p class="admin-person-name">{{ $company->name }}</p>
+                                        <p class="admin-person-email">{{ $company->slug }}</p>
+                                    </td>
+                                    <td>
+                                        <span class="count-copy">{{ $company->admins_count }} {{ \Illuminate\Support\Str::plural('admin', $company->admins_count) }} · {{ $company->members_count }} {{ \Illuminate\Support\Str::plural('member', $company->members_count) }}</span>
+                                    </td>
+                                    <td>
+                                        <div class="company-admin-list">
+                                            @forelse ($company->admins as $admin)
+                                                @php($invitation = $admin->adminInvitation)
+                                                <div class="company-admin">
+                                                    <div>
+                                                        <p class="admin-person-name">{{ $admin->name }}</p>
+                                                        <p class="admin-person-email">{{ $admin->email }}</p>
+                                                    </div>
+                                                    <div class="company-admin-actions">
+                                                        @if (! $invitation || $invitation->isAccepted())
+                                                            <span class="status-pill active">Active</span>
+                                                        @elseif ($invitation->isExpired())
+                                                            <span class="status-pill expired">Expired</span>
+                                                        @else
+                                                            <span class="status-pill pending">Pending</span>
+                                                        @endif
+
+                                                        @if ($invitation && ! $invitation->isAccepted())
+                                                            <form action="{{ route('admin-invitations.resend', $invitation) }}" method="POST">
+                                                                @csrf
+                                                                <button class="table-action" type="submit">Resend</button>
+                                                            </form>
+                                                        @endif
+                                                    </div>
+                                                </div>
+                                            @empty
+                                                <span class="count-copy">No administrators</span>
+                                            @endforelse
+                                        </div>
+                                    </td>
+                                </tr>
+                            @empty
+                                <tr>
+                                    <td class="empty-admins" colspan="3">No companies have been created yet.</td>
+                                </tr>
+                            @endforelse
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+            @elseif ($user->isAdmin())
+                <section class="panel team-management" id="team-management">
+                    <header class="panel-header">
+                        <div class="admin-heading-copy">
+                            <h2 class="panel-title">My team</h2>
+                            <p>Create admins or members for {{ $user->company?->name ?? 'your company' }}. Only users created by you appear here.</p>
+                        </div>
+                        <span class="panel-kicker">{{ $managedUsers->count() }} {{ \Illuminate\Support\Str::plural('user', $managedUsers->count()) }}</span>
+                    </header>
+
+                    @if (session('status'))
+                        <div class="feedback success" role="status">{{ session('status') }}</div>
+                    @endif
+
+                    @if ($errors->any())
+                        <div class="feedback error" role="alert">{{ $errors->first() }}</div>
+                    @endif
+
+                    <div class="invite-section">
+                        <div class="invite-copy">
+                            <h3>Create team user</h3>
+                            <p>Select Admin or Member. The new user receives a queued email invitation to set their password.</p>
+                        </div>
+
+                        <form class="invite-form three-fields" action="{{ route('admin-invitations.store') }}" method="POST">
+                            @csrf
+                            <div class="form-field">
+                                <label for="team-user-name">Full name</label>
+                                <input id="team-user-name" name="name" type="text" value="{{ old('name') }}" placeholder="Full name" maxlength="100" required>
+                            </div>
+                            <div class="form-field">
+                                <label for="team-user-email">Email address</label>
+                                <input id="team-user-email" name="email" type="email" value="{{ old('email') }}" placeholder="user@example.com" required>
+                            </div>
+                            <div class="form-field">
+                                <label for="team-user-role">Role</label>
+                                <select id="team-user-role" name="role" required>
+                                    <option value="admin" @selected(old('role') === 'admin')>Admin</option>
+                                    <option value="member" @selected(old('role') === 'member')>Member</option>
+                                </select>
+                            </div>
+                            <div class="invite-submit">
+                                <button class="primary-button" type="submit">Create user &amp; queue invite</button>
                             </div>
                         </form>
                     </div>
@@ -961,34 +1174,28 @@
                         <table class="admin-table">
                             <thead>
                             <tr>
-                                <th>Administrator</th>
+                                <th>User</th>
+                                <th>Role</th>
                                 <th>Status</th>
-                                <th class="invited-column">Invitation</th>
                                 <th><span class="sr-only">Actions</span></th>
                             </tr>
                             </thead>
                             <tbody>
-                            @forelse ($admins as $admin)
-                                @php($invitation = $admin->adminInvitation)
+                            @forelse ($managedUsers as $managedUser)
+                                @php($invitation = $managedUser->adminInvitation)
                                 <tr>
                                     <td>
-                                        <p class="admin-person-name">{{ $admin->name }}</p>
-                                        <p class="admin-person-email">{{ $admin->email }}</p>
+                                        <p class="admin-person-name">{{ $managedUser->name }}</p>
+                                        <p class="admin-person-email">{{ $managedUser->email }}</p>
                                     </td>
+                                    <td><span class="role-badge">{{ ucfirst($managedUser->role->value) }}</span></td>
                                     <td>
                                         @if (! $invitation || $invitation->isAccepted())
                                             <span class="status-pill active">Active</span>
-                                        @elseif ($invitation?->isExpired())
+                                        @elseif ($invitation->isExpired())
                                             <span class="status-pill expired">Expired</span>
                                         @else
                                             <span class="status-pill pending">Pending</span>
-                                        @endif
-                                    </td>
-                                    <td class="invited-column">
-                                        @if ($invitation?->isAccepted())
-                                            <span class="invitation-date">Accepted {{ $invitation->accepted_at->diffForHumans() }}</span>
-                                        @else
-                                            <span class="invitation-date">Expires {{ $invitation?->expires_at?->diffForHumans() }}</span>
                                         @endif
                                     </td>
                                     <td>
@@ -1002,7 +1209,7 @@
                                 </tr>
                             @empty
                                 <tr>
-                                    <td class="empty-admins" colspan="4">No administrators have been invited yet.</td>
+                                    <td class="empty-admins" colspan="4">You have not created any users yet.</td>
                                 </tr>
                             @endforelse
                             </tbody>
