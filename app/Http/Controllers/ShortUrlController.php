@@ -14,14 +14,15 @@ class ShortUrlController extends Controller
     public function index(Request $request, ShortUrlCache $cache): View
     {
         $user = $request->user('api');
-        $shortUrls = ShortUrl::query()
-            ->when(
-                $user->isSuperAdmin(),
-                fn ($query) => $query->with('user.company'),
-                fn ($query) => $query->where('user_id', $user->id),
-            )
-            ->latest()
-            ->get();
+        $query = ShortUrl::query();
+
+        if ($user->isSuperAdmin()) {
+            $query->with('user.company');
+        } else {
+            $query->where('user_id', $user->id);
+        }
+
+        $shortUrls = $query->latest()->get();
 
         $shortUrls->each(function (ShortUrl $shortUrl) use ($cache) {
             $shortUrl->setAttribute('display_hits', $cache->hits($shortUrl));

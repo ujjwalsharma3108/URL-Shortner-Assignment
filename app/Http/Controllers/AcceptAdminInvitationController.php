@@ -12,8 +12,12 @@ class AcceptAdminInvitationController extends Controller
 {
     public function show(string $token): View
     {
+        $invitation = AdminInvitation::findValidByToken($token);
+
+        abort_if($invitation === null, 404);
+
         return view('auth.accept-admin-invitation', [
-            'invitation' => AdminInvitation::findValidByToken($token) ?? abort(404),
+            'invitation' => $invitation,
             'token' => $token,
         ]);
     }

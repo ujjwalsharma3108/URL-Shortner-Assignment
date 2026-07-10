@@ -27,19 +27,17 @@ class AnalyticsController extends Controller
         AnalyticsReport $report,
         bool $isSuperAdminPage,
     ): View {
-        $page = [
-            'user' => $request->user('api'),
-            'isSuperAdminPage' => $isSuperAdminPage,
-            'pageTitle' => $isSuperAdminPage ? 'Super Admin Analytics' : 'Admin Analytics',
-            'pageSubtitle' => $isSuperAdminPage
-                ? 'Review every company, Admin, Member, short URL, and click from one place.'
-                : 'Review your URLs and the performance of users created by you.',
-            'routeName' => $isSuperAdminPage ? 'super-admin.analytics' : 'admin.analytics',
-        ];
+        $user = $request->user('api');
+        $data = $report->build($user, $isSuperAdminPage, $request->validated());
 
-        return view('analytics.index', array_merge(
-            $page,
-            $report->build($request->user('api'), $isSuperAdminPage, $request->validated()),
-        ));
+        $data['user'] = $user;
+        $data['isSuperAdminPage'] = $isSuperAdminPage;
+        $data['pageTitle'] = $isSuperAdminPage ? 'Super Admin Analytics' : 'Admin Analytics';
+        $data['pageSubtitle'] = $isSuperAdminPage
+            ? 'Review every company, Admin, Member, short URL, and click from one place.'
+            : 'Review your URLs and the performance of users created by you.';
+        $data['routeName'] = $isSuperAdminPage ? 'super-admin.analytics' : 'admin.analytics';
+
+        return view('analytics.index', $data);
     }
 }

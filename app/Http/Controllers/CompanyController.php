@@ -15,15 +15,22 @@ class CompanyController extends Controller
 {
     public function index(Request $request): View
     {
+        $companies = Company::query()
+            ->withDirectoryCounts()
+            ->with(['admins' => fn ($query) => $query
+                ->with('adminInvitation')
+                ->oldest()])
+            ->latest()
+            ->get();
+
         return view('companies.index', [
             'user' => $request->user('api'),
-            'companies' => Company::query()
-                ->withDirectoryCounts()
-                ->with(['admins' => fn ($query) => $query
-                    ->with('adminInvitation')
-                    ->oldest()])
-                ->latest()
-                ->get(),
+            'companies' => $companies,
+            'companyStats' => [
+                'companies' => $companies->count(),
+                'admins' => $companies->sum('admins_count'),
+                'members' => $companies->sum('members_count'),
+            ],
         ]);
     }
 
