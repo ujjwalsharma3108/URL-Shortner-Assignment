@@ -125,4 +125,6 @@ return [
         'password' => env('SUPER_ADMIN_PASSWORD'),
     ],
 
+    'admin_invitation_expire_hours' => (int) env('ADMIN_INVITATION_EXPIRE_HOURS', 72),
+
 ];

@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Tymon\JWTAuth\JWTGuard;
@@ -14,7 +15,7 @@ class AuthController extends Controller
     {
         $data = $request->validate([
             'name' => ['required', 'string', 'max:100'],
-            'email' => ['required', 'email', 'max:255', 'unique:users,email'],
+            'email' => ['required', 'string', 'email:rfc', 'max:255', 'not_regex:/[\r\n]/', 'unique:users,email'],
             'password' => ['required', 'string', 'min:8', 'confirmed'],
         ]);
 
@@ -27,7 +28,7 @@ class AuthController extends Controller
     public function login(Request $request): JsonResponse
     {
         $credentials = $request->validate([
-            'email' => ['required', 'email'],
+            'email' => ['required', 'string', 'email:rfc', 'not_regex:/[\r\n]/'],
             'password' => ['required', 'string'],
         ]);
 
@@ -49,13 +50,15 @@ class AuthController extends Controller
         ]);
     }
 
-    public function logout(): JsonResponse
+    public function logout(Request $request): JsonResponse|RedirectResponse
     {
         $this->guard()->logout();
 
-        return response()->json([
-            'message' => 'Logged out successfully.',
-        ]);
+        $response = $request->expectsJson()
+            ? response()->json(['message' => 'Logged out successfully.'])
+            : redirect()->route('login');
+
+        return $response->withoutCookie('token');
     }
 
     private function tokenResponse(string $token, int $status = 200): JsonResponse
@@ -67,7 +70,17 @@ class AuthController extends Controller
             'token_type' => 'bearer',
             'expires_in' => $guard->factory()->getTTL() * 60,
             'user' => $guard->user(),
-        ], $status);
+        ], $status)->withCookie(cookie(
+            'token',
+            $token,
+            $guard->factory()->getTTL(),
+            '/',
+            null,
+            request()->isSecure(),
+            true,
+            false,
+            'lax',
+        ));
     }
 
     private function guard(): JWTGuard

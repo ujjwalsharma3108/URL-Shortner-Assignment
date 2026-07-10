@@ -6,7 +6,8 @@
     <h1>Welcome back</h1>
     <p class="subtitle">Sign in to manage your shortened links.</p>
 
-    <form action="{{ route('login.store') }}" method="POST" data-auth-form data-success="Login successful. Your token has been saved.">
+    <form action="{{ route('login.store') }}" method="POST" data-auth-form data-redirect="{{ route('dashboard') }}" data-success="Login successful. Redirecting...">
+        @csrf
         <div class="message" data-message role="alert"></div>
 
         <div class="field">

@@ -6,7 +6,8 @@
     <h1>Create your account</h1>
     <p class="subtitle">Start creating and managing short links in minutes.</p>
 
-    <form action="{{ route('register.store') }}" method="POST" data-auth-form data-success="Account created. You are now signed in.">
+    <form action="{{ route('register.store') }}" method="POST" data-auth-form data-redirect="{{ route('dashboard') }}" data-success="Account created. Redirecting...">
+        @csrf
         <div class="message" data-message role="alert"></div>
 
         <div class="field">

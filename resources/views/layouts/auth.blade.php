@@ -203,6 +203,10 @@
         </a>
 
         <section class="card">
+            @if (session('status'))
+                <div class="message success" role="status">{{ session('status') }}</div>
+            @endif
+
             @yield('content')
         </section>
 
@@ -245,12 +249,12 @@
                 throw new Error(errors || 'Something went wrong. Please try again.');
             }
 
-            localStorage.setItem('access_token', data.access_token);
-            localStorage.setItem('auth_user', JSON.stringify(data.user));
+            localStorage.removeItem('access_token');
+            localStorage.removeItem('auth_user');
 
             message.className = 'message success';
             message.textContent = form.dataset.success;
-            form.reset();
+            window.location.replace(form.dataset.redirect);
         } catch (error) {
             message.className = 'message error';
             message.textContent = error.message;

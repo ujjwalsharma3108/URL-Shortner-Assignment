@@ -64,3 +64,32 @@ If you discover a security vulnerability within Laravel, please send an e-mail t
 ## License
 
 The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+
+## Admin invitation email setup
+
+Administrator invitations use Gmail SMTP and Laravel's database queue.
+
+1. Enable 2-Step Verification for the sender Google account and create a 16-character App Password.
+2. Configure the application URL and Gmail SMTP values in `.env`:
+
+   ```dotenv
+   APP_URL=http://localhost:8000
+   MAIL_MAILER=smtp
+   MAIL_HOST=smtp.gmail.com
+   MAIL_PORT=587
+   MAIL_USERNAME=your-email@gmail.com
+   MAIL_PASSWORD=your-16-character-app-password
+   MAIL_ENCRYPTION=tls
+   MAIL_FROM_ADDRESS="${MAIL_USERNAME}"
+   MAIL_FROM_NAME="${APP_NAME}"
+   QUEUE_CONNECTION=database
+   ```
+
+3. Run migrations and start the dedicated email queue worker:
+
+   ```bash
+   php artisan migrate
+   php artisan queue:work --queue=emails,default --tries=3
+   ```
+
+The invitation link expires after 72 hours by default. Change `ADMIN_INVITATION_EXPIRE_HOURS` if a different lifetime is required.
