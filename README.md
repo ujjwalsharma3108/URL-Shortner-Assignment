@@ -51,16 +51,12 @@ php artisan key:generate
 php artisan jwt:secret
 ```
 
-### 4. Create the MySQL databases
+### 4. Create the MySQL database
 
-Create the application and test databases using phpMyAdmin or MySQL:
+Create the application database using phpMyAdmin or MySQL:
 
 ```sql
 CREATE DATABASE url_shortener_assignment
-    CHARACTER SET utf8mb4
-    COLLATE utf8mb4_unicode_ci;
-
-CREATE DATABASE url_shortener_assignment_test
     CHARACTER SET utf8mb4
     COLLATE utf8mb4_unicode_ci;
 ```
@@ -87,6 +83,7 @@ APP_NAME="URL Shortener"
 APP_ENV=local
 APP_DEBUG=true
 APP_URL=http://localhost:8000
+APP_TIMEZONE=Asia/Kolkata
 
 SUPER_ADMIN_NAME="Super Admin"
 SUPER_ADMIN_EMAIL=superadmin@example.com
@@ -157,7 +154,7 @@ Open a second terminal in the project directory and run:
 php artisan queue:work database --queue=emails,default --tries=3 --timeout=90
 ```
 
-Keep this terminal running while testing invitations. The invitation flow is:
+Keep this terminal running while processing invitations. The invitation flow is:
 
 ```text
 Create user → jobs table → queue worker → Gmail SMTP → invitation email
@@ -241,14 +238,6 @@ Process a single queued job and exit:
 
 ```bash
 php artisan queue:work database --queue=emails --once
-```
-
-## Running tests
-
-Ensure `url_shortener_assignment_test` exists and the testing credentials in `phpunit.xml` match the local MySQL server. Then run:
-
-```bash
-php artisan test
 ```
 
 ## Common issues
