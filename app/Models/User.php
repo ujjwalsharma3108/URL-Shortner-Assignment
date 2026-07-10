@@ -81,6 +81,11 @@ class User extends Authenticatable implements JWTSubject
         return $this->hasMany(self::class, 'created_by');
     }
 
+    public function shortUrls(): HasMany
+    {
+        return $this->hasMany(ShortUrl::class);
+    }
+
     public function adminInvitation(): HasOne
     {
         return $this->hasOne(AdminInvitation::class);

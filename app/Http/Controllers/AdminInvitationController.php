@@ -33,7 +33,7 @@ class AdminInvitationController extends Controller
             }
 
             $company = Company::findOrFail($data['company_id']);
-            $anchor = 'company-management';
+            $redirectRoute = 'companies.index';
         } else {
             if (! $inviter->company) {
                 throw ValidationException::withMessages([
@@ -42,14 +42,14 @@ class AdminInvitationController extends Controller
             }
 
             $company = $inviter->company;
-            $anchor = 'team-management';
+            $redirectRoute = 'team.index';
         }
 
         $invitations->create($inviter, $company, $role, $data);
 
         $roleLabel = ucfirst($role->value);
 
-        return redirect(route('dashboard').'#'.$anchor)
+        return redirect()->route($redirectRoute)
             ->with('status', "{$roleLabel} invitation for {$data['email']} has been queued.");
     }
 
@@ -73,9 +73,9 @@ class AdminInvitationController extends Controller
         }
 
         $invitations->resend($invitation);
-        $anchor = $inviter->isSuperAdmin() ? 'company-management' : 'team-management';
+        $redirectRoute = $inviter->isSuperAdmin() ? 'companies.index' : 'team.index';
 
-        return redirect(route('dashboard').'#'.$anchor)
+        return redirect()->route($redirectRoute)
             ->with('status', "A new invitation for {$invitation->user->email} has been queued.");
     }
 }

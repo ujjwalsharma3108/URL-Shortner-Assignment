@@ -121,6 +121,10 @@ The application stores invitation jobs in MySQL:
 ```dotenv
 QUEUE_CONNECTION=database
 ADMIN_INVITATION_EXPIRE_HOURS=72
+
+CACHE_DRIVER=file
+SHORT_URL_CACHE_TTL=86400
+SHORT_URL_CODE_LENGTH=7
 ```
 
 ### 8. Run migrations and seed the Super Admin
@@ -179,6 +183,45 @@ Then start `queue:work` again if a process manager is not restarting it automati
 Public registration is disabled. Company users receive a queued email invitation and set their password using the invitation link.
 
 Existing Admin or Member records without a company are assigned to `Default Company` when the company migration runs.
+
+## URL shortening and cache
+
+- Admin and Member users can create short URLs from the dedicated `/short-urls` page.
+- Super Admin cannot create short URLs, but can see every user's short URL, destination URL, company, and one consolidated hit count.
+- Public short links use the `/s/{code}` route.
+- URL mappings and hit counts are cached for 86,400 seconds (one day).
+- Redirects read from cache first. A cache miss falls back to MySQL and repopulates the cache.
+- Every successful redirect increments the database hit count and synchronizes the cached hit count.
+- The application displays one total hit count; database and cache hit values are not shown separately.
+
+Clear the local cache if required:
+
+```bash
+php artisan cache:clear
+```
+
+## Role-based analytics
+
+- Super Admin analytics is available at `/super-admin/analytics` and includes every company's Admins, Members, URLs, and clicks.
+- Admin analytics is available at `/admin/analytics` and includes the Admin plus only users created by that Admin.
+- Super Admin can filter by company, role, user, and URL creation date.
+- Admin can filter by role, user, and URL creation date.
+- The summary cards, user performance table, and URL table all follow the selected filters.
+
+## Application pages and modules
+
+| Page | Route | Access |
+| --- | --- | --- |
+| Dashboard overview | `/dashboard` | All signed-in users |
+| Short URL directory | `/short-urls` | All signed-in users; Super Admin is read-only |
+| Company management | `/companies` | Super Admin only |
+| Team management | `/team` | Admin only |
+| Super Admin analytics | `/super-admin/analytics` | Super Admin only |
+| Admin analytics | `/admin/analytics` | Admin only |
+
+The signed-in application UI uses `resources/views/layouts/app.blade.php`, shared navigation and feedback partials under `resources/views/partials/app`, reusable components under `resources/views/components`, and the centralized stylesheet at `public/css/app.css`.
+
+Analytics filtering and aggregation live in `app/Services/AnalyticsReport.php`, while request validation lives in `app/Http/Requests/AnalyticsFilterRequest.php`. Page controllers remain focused on their individual modules.
 
 ## Queue management
 

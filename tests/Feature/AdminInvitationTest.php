@@ -30,7 +30,7 @@ class AdminInvitationTest extends TestCase
             'company_name' => 'Acme Travel',
             'admin_name' => 'Acme Admin',
             'admin_email' => 'admin@acme.test',
-        ])->assertRedirect(route('dashboard').'#company-management');
+        ])->assertRedirect(route('companies.index'));
 
         $company = Company::where('slug', 'acme-travel')->firstOrFail();
         $admin = User::where('email', 'admin@acme.test')->firstOrFail();
@@ -56,7 +56,7 @@ class AdminInvitationTest extends TestCase
             'email' => 'admin@northwind.test',
             'role' => UserRole::Admin->value,
             'company_id' => $company->id,
-        ])->assertRedirect(route('dashboard').'#company-management');
+        ])->assertRedirect(route('companies.index'));
 
         $admin = User::where('email', 'admin@northwind.test')->firstOrFail();
         $this->assertSame($company->id, $admin->company_id);
@@ -79,7 +79,7 @@ class AdminInvitationTest extends TestCase
                 'name' => ucfirst($role->value).' User',
                 'email' => $role->value.'@contoso.test',
                 'role' => $role->value,
-            ])->assertRedirect(route('dashboard').'#team-management');
+            ])->assertRedirect(route('team.index'));
         }
 
         foreach ([UserRole::Admin, UserRole::Member] as $role) {
@@ -105,6 +105,7 @@ class AdminInvitationTest extends TestCase
         ]);
         User::factory()->create([
             'email' => 'visible@fabrikam.test',
+            'role' => UserRole::Member,
             'company_id' => $company->id,
             'created_by' => $firstAdmin->id,
         ]);
@@ -115,9 +116,10 @@ class AdminInvitationTest extends TestCase
         ]);
         $this->authenticateAs($firstAdmin);
 
-        $this->get(route('dashboard'))
+        $this->get(route('team.index'))
             ->assertOk()
             ->assertSee('visible@fabrikam.test')
+            ->assertSee('<span class="role-badge">Member</span>', false)
             ->assertDontSee('hidden@fabrikam.test');
     }
 
@@ -138,7 +140,7 @@ class AdminInvitationTest extends TestCase
         ]);
         $this->authenticateAs($superAdmin);
 
-        $this->get(route('dashboard'))
+        $this->get(route('companies.index'))
             ->assertOk()
             ->assertSeeText('First Company')
             ->assertSeeText('Second Company')

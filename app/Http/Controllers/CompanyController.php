@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Enums\UserRole;
 use App\Models\Company;
 use App\Services\UserInvitationService;
+use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -12,6 +13,20 @@ use Illuminate\Support\Str;
 
 class CompanyController extends Controller
 {
+    public function index(Request $request): View
+    {
+        return view('companies.index', [
+            'user' => $request->user('api'),
+            'companies' => Company::query()
+                ->withDirectoryCounts()
+                ->with(['admins' => fn ($query) => $query
+                    ->with('adminInvitation')
+                    ->oldest()])
+                ->latest()
+                ->get(),
+        ]);
+    }
+
     public function store(Request $request, UserInvitationService $invitations): RedirectResponse
     {
         $data = $request->validate([
@@ -37,7 +52,7 @@ class CompanyController extends Controller
             );
         });
 
-        return redirect(route('dashboard').'#company-management')
+        return redirect()->route('companies.index')
             ->with('status', "{$data['company_name']} and its primary admin were created. The invitation has been queued.");
     }
 

@@ -23,20 +23,32 @@ class AuthServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        Gate::before(function (User $user) {
-            return $user->isSuperAdmin() ? true : null;
-        });
-
         Gate::define('manage-users', function (User $user) {
-            return $user->role === UserRole::Admin;
+            return in_array($user->role, [UserRole::SuperAdmin, UserRole::Admin], true);
         });
 
         Gate::define('manage-admins', function (User $user) {
             return $user->isSuperAdmin();
         });
 
-        Gate::define('manage-settings', function () {
-            return false;
+        Gate::define('manage-settings', function (User $user) {
+            return $user->isSuperAdmin();
+        });
+
+        Gate::define('create-short-url', function (User $user) {
+            return ! $user->isSuperAdmin();
+        });
+
+        Gate::define('view-super-admin-analytics', function (User $user) {
+            return $user->isSuperAdmin();
+        });
+
+        Gate::define('view-admin-analytics', function (User $user) {
+            return $user->isAdmin();
+        });
+
+        Gate::define('manage-team', function (User $user) {
+            return $user->isAdmin();
         });
     }
 }
